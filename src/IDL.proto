@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package simulacion;
+
+// Vector -> [P1, P2, P3, P4, P5]
+message RelojVectorial {
+    repeated int32 vector = 1;
+}
+
+// Parametros para enviar
+message MensajeEnvio {
+    int32 id_emisor = 1;
+    int32 id_receptor = 2;
+    string contenido = 3;
+    RelojVectorial reloj = 4;
+}
+
+// Parametros para recibir
+message MensajeRecepcion {
+    int32 id_emisor = 1;
+    string contenido = 2;
+    RelojVectorial reloj_recibido = 3;
+}
+
+// Evento Interno
+message Vacio {}
+
+// Acuse de recibido (ACK)
+message Ack {
+    bool exito = 1;
+}
+
+// Servicios RPC
+service ProcesoDistribuido {
+    rpc EnviarMensaje (MensajeEnvio) returns (Ack);
+    rpc RecibirMensaje (MensajeRecepcion) returns (Ack);
+    rpc EventoInterno (Vacio) returns (Ack);
+    rpc Difusion (MensajeEnvio) returns (Ack); 
+}
