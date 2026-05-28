@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  p1:
+    build: .
+    container_name: p1
+    environment:
+      - PROCESS_ID=1
+    networks:
+      - sensores_network
+
+  p2:
+    build: .
+    container_name: p2
+    environment:
+      - PROCESS_ID=2
+    networks:
+      - sensores_network
+
+  p3:
+    build: .
+    container_name: p3
+    environment:
+      - PROCESS_ID=3
+    networks:
+      - sensores_network
+
+  p4:
+    build: .
+    container_name: p4
+    environment:
+      - PROCESS_ID=4
+    networks:
+      - sensores_network
+
+  p5:
+    build: .
+    container_name: p5
+    environment:
+      - PROCESS_ID=5
+    networks:
+      - sensores_network
+
+networks:
+  sensores_network:
+    driver: bridge
