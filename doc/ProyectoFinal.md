@@ -139,16 +139,16 @@ Los archivos y un documento donde se incluya lo siguiente:
 
 3.   Cliente RPC
 
-4.   Implementación del Reloj de Lamport.
+4.   Implementación del Reloj Vectorial.
 
 5.   Diagrama donde se deﬁna un escenario concreto para el sistema compuesto por 5 procesos: Cada
 proceso tendrá una secuencia de eventos, tanto internos como de comunicación.
 
-6.   Descripción de orden de instrucciones para poner en marcha los contenedores
+1.   Descripción de orden de instrucciones para poner en marcha los contenedores
 
-7.   Bitácoras de ejecución.
+2.   Bitácoras de ejecución.
 
-8.   Video corto de demostración donde se muestre ejecución de contenedores, envío de mensajes,
+3.   Video corto de demostración donde se muestre ejecución de contenedores, envío de mensajes,
 actualización de relojes vectoriales, bitácoras
 
 Sistemas Distribuidos

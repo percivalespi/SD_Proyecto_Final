@@ -1,9 +1,21 @@
+"""
+Equipo:
+- Duque Malpica Victor Javier
+- Espinoza Matamoros Percival Ulises
+- Flores Colín Victor Jaziel
+- Migueles Martínez Lino Shatinni
+Fecha: 02-06-2026
+"""
+
+# Modulo para interacutar con los procesos por medio de la linea de comandos
+
 import sys
 import grpc
 import IDL_pb2
 import IDL_pb2_grpc
 
 def main():
+    # Validando formato de los argumentos por linea de comandos
     if len(sys.argv) < 2:
         print("Uso:")
         print("  python src/trigger.py interno")
@@ -12,14 +24,17 @@ def main():
         sys.exit(1)
 
     comando = sys.argv[1].lower()
-    
+
+    # Estableciendo conexión gRPC con el servidor local
     channel = grpc.insecure_channel('localhost:50051')
     stub = IDL_pb2_grpc.ProcesoDistribuidoStub(channel)
 
+    # Ejecucion del comando correspondiente
     try:
+        # El servicio de evento interno no requiere argumentos adicionales
         if comando == "interno":
             stub.EventoInterno(IDL_pb2.Vacio())
-            
+        
         elif comando == "enviar":
             id_destino = int(sys.argv[2])
             mensaje = sys.argv[3]
@@ -30,6 +45,8 @@ def main():
             mensaje = sys.argv[2]
             req = IDL_pb2.MensajeEnvio(contenido=mensaje)
             stub.Difusion(req)
+        
+        # NOTA: La recepción de mensajes la realiza el servidor gRPC automáticamente
             
         else:
             print("Comando desconocido.")

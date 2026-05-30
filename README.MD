@@ -1,127 +1,118 @@
-# Fases del Desarrollo del Proyecto
+# Proyecto Final: Simulación de Procesos Distribuidos
+**Sistema de Venta de Boletos de Cine con Relojes Vectoriales**
 
-~~~
+Este proyecto implementa una simulación de venta de boletos de cine distribuida en 5 procesos Docker. Utiliza gRPC para la conectividad y Relojes Vectoriales de Lamport para mantener el orden de eventos lógicos, junto con bitácoras para auditar la traza de ejecución. 
+
+## Estructura del Proyecto
+
+~~~text
 proyecto_distribuidos/
 ├── docker-compose.yml
 ├── Dockerfile
 ├── requirements.txt
-└── src/
-    ├── IDL.proto
-    ├── reloj.py
-    ├── servidor_grpc.py
-    ├── cliente_grpc.py
-    ├── main.py
-    └── trigger.py
+├── src/
+│   ├── IDL.proto         # Definición de los servicios
+│   ├── reloj.py          # Clase del Reloj Vectorial
+│   ├── servidor_grpc.py  # Handler de peticiones RPC
+│   ├── cliente_grpc.py   # Invocador de peticiones RPC
+│   ├── main.py           # Orquestador del contenedor
+│   └── trigger.py        # Disparador externo de eventos (CLI)
 └── doc/
-    ├── notas.md # Documentación de lo que llevo
-    ├── requimientos.md # Requisitos que pide el proyecto
-    ├── SD_Escenario_PF.drawio # Diagrama de espacio-tiempo del escenario (para modificar con draw.io)
-    └── SD_Escenario_PF.png # Diagrama de espacio-tiempo del escenario
+    ├── notas.md                  # Documentación teórica y escenario detallado
+    ├── requerimientos.md         # Requisitos del proyecto
+    ├── SD_Escenario_PF.drawio    # Archivo fuente del diagrama (draw.io)
+    └── SD_Escenario_PFv1.png     # Imagen del diagrama de espacio-tiempo
 ~~~
 
-Donde:
+**Funcionamiento de los módulos principales:**
+- `reloj.py`: Clase que maneja la lógica matemática del vector (incrementar localmente y aplicar función `max()` al recibir).
+- `servidor_grpc.py`: Clase que escucha y procesa peticiones (hereda de `.proto`), formatea logs y actualiza el vector.
+- `cliente_grpc.py`: Funciones auxiliares para iniciar conexión asíncrona hacia otros contenedores gRPC.
+- `main.py`: Punto de entrada del contenedor. Instancia `reloj.py` en memoria, enciende `servidor_grpc.py` y mantiene el contenedor vivo esperando iteraciones de `trigger.py`.
+- `trigger.py`: Herramienta "Control Remoto" usada a través de `docker exec` para activar la simulación enviando órdenes al `main.py`.
 
-- reloj.py: Una clase que maneja la lógica matemática del vector (incrementar, hacer el max, etc.).
-
-- servidor_grpc.py: La clase que define cómo responder a las peticiones (hereda de tu .proto).
-
-- cliente_grpc.py: Una clase con funciones auxiliares para conectarse a otros contenedores.
-
-- main.py: El orquestador. Importa las tres clases anteriores, instancia un solo reloj en memoria, levanta el servidor pasándole ese reloj, y se queda esperando los comandos del trigger.py para usar el cliente.
+---
 
 ## ¿Cómo ejecutar el programa?
-Aun en desarrollo....
 
-En caso de no tener instalado las dependencias de `grpcio` y `grpcio-tools`, se deben de instalar utilizando el siguiente comando:
+### Preparación del Entorno Local (Opcional - Para desarrollo)
+En caso de realizar modificaciones a `IDL.proto` y requerir recompilarlas en Python, instala las dependencias `grpcio` y `grpcio-tools`:
 
-Es recomendable crear un entorno virtual para evitar conflictos con otras dependencias de Python en el sistema. 
 ```bash
+# Se recomienda usar un entorno virtual
 python -m venv venv
-.venv\bin\activate
-```
+source venv/bin/activate
 
-
-Instalación de dependencias:
-```bash
+# Instalación de dependencias:
 pip install -r requirements.txt
+
+# Generar clases de gRPC desde la carpeta raíz:
+cd src
+python -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. IDL.proto
+cd ..
 ```
 
->[!NOTE]
-> Para generar las plantillas con grpc ejecutar el siguiente comando en /src:
-> 
-> `python -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. IDL.proto`
+### Ejecución con Docker (Orquestación del Clúster)
 
-### Ejecución con Docker
-Para esto es neceario tener clonado el repositorio:
-```bash
-git clone https://github.com/percivalespi/SD_Proyecto_Final.git
-```
-Verificar si se cuenta con docker-compose:
-```bash
-docker-compose --version
-```
-En caso de no contar con docker-compose se deberá instalar con:
-```bash
-sudo apt install docker-compose -y
-sudo systemctl start docker
-sudo systemctl enable docker
-docker-compose --version
-```
-Una vez se tenga el repositorio y docker-compose ahora ejecutar el docker.
-```bash
-sudo docker-compose build
-```
-Levantar clúster.
-```bash
-sudo docker-compose up
-```
-#### Pruebas de comunicación:
+El sistema completo se ejecuta empaquetado en contenedores aislados.
 
-```bash
-# Ejecutar evento interno en el proceso 1
-sudo docker-compose exec p1 python src/trigger.py interno
+1. **Construir y levantar la infraestructura:**
+   ```bash
+   sudo docker-compose down
+   sudo docker-compose up -d --build
+   ```
 
-# Enviar mensaje de P1 a P5
-sudo docker-compose exec p1 python src/trigger.py enviar 5 "Hola desde P1"
-```
+2. **Ejecutar la simulación "Venta de Boletos" (Paso a Paso):**
+   *Deberás inyectar los eventos al clúster ejecutando los triggers con `docker exec`:*
+   ```bash
+   # Paso 1: Primeras Comunicaciones (Selección de boletos)
+   sudo docker exec p1 python src/trigger.py interno
+   sudo docker exec p1 python src/trigger.py enviar 5 '{"cliente": "Victor", "asientos": ["F1", "F2"], "estado": "seleccionando"}'
+   sudo docker exec p2 python src/trigger.py interno
+   sudo docker exec p2 python src/trigger.py enviar 4 '{"sala": 4, "matriz_asientos": "cargada"}'
 
-## Fase 1: Definición y Contratos (COMPLETADA)
+   # Paso 2: Eventos Paralelos y Procesamiento (Pago del usuario)
+   sudo docker exec p1 python src/trigger.py interno
+   sudo docker exec p1 python src/trigger.py enviar 5 '{"cliente": "Victor", "monto": 150, "tarjeta": "****1234"}'
+   sudo docker exec p4 python src/trigger.py interno
+   sudo docker exec p5 python src/trigger.py interno
 
-- [x] Contrato gRPC: Definir los 4 servicios requeridos (envío, recepción, evento interno y difusión) en src/IDL.proto.  
+   # Paso 3: Difusión y Sincronización Final (Confirmación de compra)
+   sudo docker exec p5 python src/trigger.py difusion '{"orden": "TKT-1000", "estado": "PAGADO"}'
+   sudo docker exec p3 python src/trigger.py interno
+   ```
 
-- [x] Compilación: Ejecutar el comando de grpcio-tools (ahora apuntando a la carpeta src) para generar los archivos _pb2.py y _pb2_grpc.py.
+3. **Extraer bitácoras (Validación Matemática):**
+   ```bash
+   sudo docker logs p1
+   sudo docker logs p2
+   sudo docker logs p3
+   sudo docker logs p4
+   sudo docker logs p5
+   sudo docker-compose logs --tail=50
+   ```
 
-- [x] Diseño del Escenario: Finalizar el diagrama de espacio-tiempo para el escenario de los 5 procesos IoT.  
-PDF
+---
 
-## Fase 2: Implementación Modular en Python
+## Fases del Desarrollo (Progreso)
 
-- [x] El Estado (src/reloj.py): Programar la clase que mantendrá el vector en memoria y manejará los cálculos lógicos (incrementos y la regla del valor máximo al recibir mensajes).
+### Fase 1: Definición y Contratos (COMPLETADA)
+- [x] Contrato gRPC: Definir los 4 servicios requeridos (envío, recepción, evento interno y difusión) en `src/IDL.proto`.  
+- [x] Compilación: Ejecutar `grpcio-tools` para generar las clases autogeneradas en Python.
+- [x] Diseño del Escenario: Finalizar el diagrama espacio-tiempo documentando la Venta de Boletos de Cine con 5 microservicios (`doc/notas.md`).
 
+### Fase 2: Lógica de la Aplicación en Python (COMPLETADA)
+- [x] El Estado (`src/reloj.py`): Implementar vector concurrente con operaciones `max()`.
+- [x] El Oyente (`src/servidor_grpc.py`): Recepción RPC escribiendo registros estructurados `[INTERNAL]`, `[SEND]` y `[RECEIVE]`.
+- [x] El Hablador (`src/cliente_grpc.py`): Funcionalidad de envíos simples y modalidad Broadcast hacia todos los miembros.
+- [x] El Orquestador (`src/main.py`): Inyección de entorno Docker a la lógica e inicio de servidor persistente en cada contenedor.
+- [x] El Disparador (`src/trigger.py`): Control remoto CLI.
 
-- [x] El Oyente (src/servidor_grpc.py): Implementar la respuesta a los 4 servicios RPC, actualizando el reloj vectorial de forma correcta e imprimiendo los registros exactos para las bitácoras.  
-PDF
+### Fase 3: Infraestructura Docker (COMPLETADA)
+- [x] Empaquetado: Configuración de `Dockerfile` empaquetando entorno Python-Slim.
+- [x] Red Virtual: Orquestación mediante `docker-compose.yml` resolviendo hostnames hacia la red `boletos_network`.
 
-- [x] El Hablador (src/cliente_grpc.py): Crear la lógica de conexión para enviar los mensajes hacia otros contenedores, empaquetando el reloj actual del emisor.  
-PDF
-
-- [x] El Orquestador (src/main.py): Inicializar la instancia del reloj, arrancar el servidor gRPC y mantener el proceso en un ciclo infinito para que el contenedor no se apague.
-
-- [x] El Disparador (src/trigger.py): Escribir el script CLI que recibirá parámetros por consola y se comunicará con el servidor local para iniciar las acciones.
-
-### Fase 3: Dockerización y Redes
-
-- [x] Empaquetado: Configurar el Dockerfile en la raíz para que instale las dependencias de Python, copie la carpeta src completa al contenedor y ejecute python src/main.py al arrancar.
-
-- [x] Orquestación: Armar el docker-compose.yml para levantar los 5 contenedores de manera simultánea, asegurando que la comunicación sea únicamente interna entre ellos. 
-
-### Fase 4: Pruebas desde Consola y Entregables
-
-- [ ] Ejecución de Pruebas: Poner en práctica tu manejo de la línea de comandos de Linux utilizando docker exec sobre cada contenedor para disparar la secuencia de eventos mediante trigger.py.  
-
-- [ ] Validación: Utilizar comandos de consola para leer las salidas y confirmar que cada evento haya quedado debidamente registrado en su bitácora.  
-PDF
-
-- [ ] Demostración: Grabar el video corto donde muestres la terminal ejecutando los contenedores, el envío de mensajes y cómo se actualizan los relojes.  
-PDF
-
+### Fase 4: Pruebas y Entregables (COMPLETADA)
+- [x] Ejecución: Disparo iterativo mediante `docker exec` inyectando todo el escenario teórico.
+- [x] Validación cruzada: Obtención de logs para demostrar cómo los vectores cuadran idénticamente contra el diagrama de diseño.
+- [ ] Demostración audiovisual: Pendiente la realización de la grabación de pantalla del terminal para la evaluación final con la profesora.

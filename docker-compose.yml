@@ -7,7 +7,7 @@ services:
     environment:
       - PROCESS_ID=1
     networks:
-      - sensores_network
+      - boletos_network
 
   p2:
     build: .
@@ -15,7 +15,7 @@ services:
     environment:
       - PROCESS_ID=2
     networks:
-      - sensores_network
+      - boletos_network
 
   p3:
     build: .
@@ -23,7 +23,7 @@ services:
     environment:
       - PROCESS_ID=3
     networks:
-      - sensores_network
+      - boletos_network
 
   p4:
     build: .
@@ -31,7 +31,7 @@ services:
     environment:
       - PROCESS_ID=4
     networks:
-      - sensores_network
+      - boletos_network
 
   p5:
     build: .
@@ -39,8 +39,8 @@ services:
     environment:
       - PROCESS_ID=5
     networks:
-      - sensores_network
+      - boletos_network
 
 networks:
-  sensores_network:
+  boletos_network:
     driver: bridge

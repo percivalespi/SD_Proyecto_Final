@@ -1,18 +1,18 @@
 FROM python:3.9-slim
-
+# Estableciendo el directorio de trabajo dentro del contenedor
 WORKDIR /app
 
-# Copiamos las dependencias
+# Dependencias necesarias para gRPC
 COPY requirements.txt .
 
-# Instalamos grpcio y grpcio-tools
+# Instalcion de las depencias: grpcio y grpcio-tools
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copiamos el código fuente
+# Copiaa del código fuente al contenedor
 COPY src/ /app/src/
 
-# Añadimos /app/src al path para que Python encuentre los módulos autogenerados
+# Añadiendo al path de Python el directorio con el código fuente
 ENV PYTHONPATH=/app/src
 
-# Arrancamos el orquestador
+# Inicialización del proceso de acuerdo a su ID, este se pasa como argmento
 CMD ["python", "src/main.py"]

@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package simulacion;
 
-// Vector -> [P1, P2, P3, P4, P5]
+// Reloj Vectorial -> [P1, P2, P3, P4, P5]
 message RelojVectorial {
     repeated int32 vector = 1;
 }

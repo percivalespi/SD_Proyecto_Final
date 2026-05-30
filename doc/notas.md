@@ -52,7 +52,7 @@ Estado inicial del vector [P1,P2,P3,P4,P5]: `[0, 0, 0, 0, 0]`
 
 #### Paso 1: Primeras Comunicaciones (Preparación y Selección)
 
-- **A. P1 (App Cliente) - Evento Interno:** El usuario selecciona 2 asientos para "Dune". P1 crea el JSON de intención de compra: `{"cliente": "Marta", "asientos": ["F1", "F2"], "estado": "seleccionando"}`. Incrementa su índice. Vector local: `[1, 0, 0, 0, 0]`.
+- **A. P1 (App Cliente) - Evento Interno:** El usuario selecciona 2 asientos para "Interstellar". P1 crea el JSON de intención de compra: `{"cliente": "Victor", "asientos": ["F1", "F2"], "estado": "seleccionando"}`. Incrementa su índice. Vector local: `[1, 0, 0, 0, 0]`.
     
 - **B. P1 (App Cliente) - Envío a P5:** P1 manda esta selección al Orquestador para iniciar el trámite. Incrementa su reloj vectorial. Vector local: `[2, 0, 0, 0, 0]`.
     
@@ -67,7 +67,7 @@ Estado inicial del vector [P1,P2,P3,P4,P5]: `[0, 0, 0, 0, 0]`
 
 #### Paso 2: Eventos Paralelos y Procesamiento de Pago
 
-- **G. P1 (App Cliente) - Evento Interno:** El usuario introduce los datos de su tarjeta de crédito en la interfaz. P1 actualiza su JSON: `{"cliente": "Marta", "monto": 150, "tarjeta": "****1234"}`. Incrementa su índice. Vector local: `[3, 0, 0, 0, 0]`.
+- **G. P1 (App Cliente) - Evento Interno:** El usuario introduce los datos de su tarjeta de crédito en la interfaz. P1 actualiza su JSON: `{"cliente": "Victor", "monto": 150, "tarjeta": "****1234"}`. Incrementa su índice. Vector local: `[3, 0, 0, 0, 0]`.
     
 - **H. P1 (App Cliente) - Envío a P5:** Manda los datos de cobro al Orquestador. Incrementa su índice. Vector local: `[4, 0, 0, 0, 0]`.
     
@@ -75,7 +75,7 @@ Estado inicial del vector [P1,P2,P3,P4,P5]: `[0, 0, 0, 0, 0]`
     
 - **J. P5 (Orquestador) - Recepción de P1:** Recibe los datos de la tarjeta de P1. Incrementa su índice (a 2) y toma el máximo. Vector local: `[4, 0, 0, 0, 2]`.
     
-- **K. P5 (Orquestador) - Evento Interno:** Se conecta simuladamente al banco, el cobro es exitoso, y genera el dictamen final: `{"orden": "TKT-8899", "estado": "PAGADO"}`. Incrementa su índice. Vector local: `[4, 0, 0, 0, 3]`.
+- **K. P5 (Orquestador) - Evento Interno:** Se conecta simuladamente al banco, el cobro es exitoso, y genera el dictamen final: `{"orden": "TKT-1000", "estado": "PAGADO"}`. Incrementa su índice. Vector local: `[4, 0, 0, 0, 3]`.
     
 
 #### Paso 3: Difusión de Mensajes (Sincronización Final)
@@ -88,12 +88,12 @@ Estado inicial del vector [P1,P2,P3,P4,P5]: `[0, 0, 0, 0, 0]`
     
 - **O. P3 (Notificaciones) - Recepción de P5:** Recibe los datos de la compra. Incrementa su índice (a 1) y toma el máximo. Vector local: `[4, 0, 1, 0, 4]`.
     
-- **P. P4 (Emisión) - Recepción de P5:** Asigna los QR generados a la orden TKT-8899. Incrementa su índice (a 3) y toma el máximo. Vector local: `[4, 2, 0, 3, 4]`.
+- **P. P4 (Emisión) - Recepción de P5:** Asigna los QR generados a la orden TKT-1000. Incrementa su índice (a 3) y toma el máximo. Vector local: `[4, 2, 0, 3, 4]`.
     
-- **Q. P3 (Notificaciones) - Evento Interno:** Su código extrae el nombre del JSON y simula el envío del correo imprimiendo en consola: _"Enviando boletos a Marta..."_. Incrementa su índice. Vector local final: `[4, 0, 2, 0, 4]`.
+- **Q. P3 (Notificaciones) - Evento Interno:** Su código extrae el nombre del JSON y simula el envío del correo imprimiendo en consola: _"Enviando boletos a Victor..."_. Incrementa su índice. Vector local final: `[4, 0, 2, 0, 4]`.
 
 A partir del escenario descrito se tiene el siguiente diagrama de eventos:
-![Diagrama de Eventos](./SD_Escenario_PF.png)
+![Diagrama de Eventos](./SD_Escenario_PFv1.png)
 
 ## Implementación y Ejecución Final
 
@@ -104,7 +104,7 @@ El sistema ha sido implementado exitosamente cumpliendo con los lineamientos est
 2. **Reloj Vectorial (`reloj.py`)**: Implementa la lógica matemática de los relojes de Lamport (incremento local y sincronización `max()` al recibir mensajes) garantizando control de concurrencia mediante hilos y cerrojos (`threading.Lock()`).
 3. **Servidor y Cliente RPC (`servidor_grpc.py`, `cliente_grpc.py`)**: Manejan las peticiones de red y la inyección o actualización de los vectores en los mensajes enviados y recibidos. Aquí se formatea y escribe el output en la bitácora (`[INTERNAL]`, `[SEND]`, `[RECEIVE]`, `[BROADCAST]`).
 4. **Disparador y Orquestación (`trigger.py`, `main.py`)**: `main.py` inicializa el contenedor con el ID correcto e inicia el servidor. `trigger.py` es una utilidad de línea de comandos usada vía `docker exec` para inyectar transacciones desde afuera.
-5. **Infraestructura (`Dockerfile`, `docker-compose.yml`)**: Empaqueta todo en una imagen basada en `python:3.9-slim` y orquesta los 5 procesos (p1 a p5) resolviéndose internamente en la red de Docker `sensores_network`.
+5. **Infraestructura (`Dockerfile`, `docker-compose.yml`)**: Empaqueta todo en una imagen basada en `python:3.9-slim` y orquesta los 5 procesos (p1 a p5) resolviéndose internamente en la red de Docker `boletos_network`.
 
 ### Instrucciones para Ejecutar y Probar
 
@@ -118,23 +118,24 @@ El sistema ha sido implementado exitosamente cumpliendo con los lineamientos est
    ```bash
    # Paso 1: Primeras Comunicaciones
    sudo docker exec p1 python src/trigger.py interno
-   sudo docker exec p1 python src/trigger.py enviar 5 '{"cliente": "Marta", "asientos": ["F1", "F2"], "estado": "seleccionando"}'
+   sudo docker exec p1 python src/trigger.py enviar 5 '{"cliente": "Victor", "asientos": ["F1", "F2"], "estado": "seleccionando"}'
    sudo docker exec p2 python src/trigger.py interno
    sudo docker exec p2 python src/trigger.py enviar 4 '{"sala": 4, "matriz_asientos": "cargada"}'
 
    # Paso 2: Eventos Paralelos y Procesamiento
    sudo docker exec p1 python src/trigger.py interno
-   sudo docker exec p1 python src/trigger.py enviar 5 '{"cliente": "Marta", "monto": 150, "tarjeta": "****1234"}'
+   sudo docker exec p1 python src/trigger.py enviar 5 '{"cliente": "Victor", "monto": 150, "tarjeta": "****1234"}'
    sudo docker exec p4 python src/trigger.py interno
    sudo docker exec p5 python src/trigger.py interno
 
    # Paso 3: Difusión de Mensajes (Sincronización Final)
-   sudo docker exec p5 python src/trigger.py difusion '{"orden": "TKT-8899", "estado": "PAGADO"}'
+   sudo docker exec p5 python src/trigger.py difusion '{"orden": "TKT-1000", "estado": "PAGADO"}'
    sudo docker exec p3 python src/trigger.py interno
    ```
 
 3. **Extraer y Validar las Bitácoras:**
    ```bash
+   sudo docker-compose logs --tail=50
    sudo docker logs p1
    sudo docker logs p2
    sudo docker logs p3
