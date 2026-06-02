@@ -3,7 +3,7 @@ Equipo:
 - Duque Malpica Victor Javier
 - Espinoza Matamoros Percival Ulises
 - Flores Colín Victor Jaziel
-- Migueles Martínez Lino Shatinni
+- Migueles Martínez Lino Shatini
 Fecha: 02-06-2026
 """
 
